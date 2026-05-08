@@ -13,4 +13,3 @@ ping() ->
   receive
     From -> From ! pong
   end.
-
