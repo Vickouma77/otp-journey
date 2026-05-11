@@ -234,6 +234,7 @@ Compile the program:
 3> c(tut).
 {ok,tut}
 ```
+
 The `{ok,tut}` means that the compilation is OK. If it says `error` it means that there is some mistake in the text that you entered. Additional error messages gives an idea to what is wrong so you can modify the text and then try to compile the program again.
 run:
 ```erlang
@@ -248,6 +249,10 @@ The second line says that the module `tut` contains a function called `double`, 
 ```erlang
 -export([double/1]).
 ```
+
+Calling a function from another module in this form `lists:rverse([1, 2, 3, 4])` is called `remote call`, as opposed to a `local call` which is  calling a function in the same module.
+The number of arguments a function takes is called `arity`; a function that takes zero argument is `nullary fucntion`, one argument is `unary function`, two arguments `binary function`, three arguments `ternary function`. The full name of a function must always include the arity (written with a slash as separator). `double/1`.
+Like any other programming language, Erlang comes with a standard library of useful functions. These are spread over a large number of modules, but some standard library modules are more commonly used than others. In particular, the module named `erlang` contains functions that are central to the entire Erlang system, which everything else builds on. Another useful module that you’ve seen already is the `lists` module. The `io` module handles basic text input and output. The `dict` module provides hash-based associative arrays (dictionaries), the `array` module provides extensible integer-indexed arrays, and so forth. Some functions are involved with things that are so low-level that the functions are an intrinsic part of the language and the runtime system. These are commonly referred to as `built-in functions (BIFs)`, and like the Erlang runtime system, they’re implemented in the C programming language. All functions in the `erlang` module are `BIF`.
 
 
 
