@@ -86,8 +86,8 @@ Normal infix notation is used for common arithmetic operators:
 ```
 for divisions 2 options exists:
 ```erlang
-/ -> yields a floating point number; 4 / 2 ---> 2.0
-div ->  7 div 2 ----> 3
+%% yields a floating point number; 4 / 2 ---> 2.0
+%% div ->  7 div 2 ----> 3
 ```
 The remainder of an integer division is given by the ```rem``` operator. There are some additional integer operators for `bitwise` operations: `N bsl K` shifts the integer, N K steps to the left, and `bsr` performs a corresponding arithmetic right shift. The `bitwise` logic operators are named `band`,` bor`,` bxor`, and `bnot`. For example,` X band (bnot Y)` masks away those bits from `X` that are set in `Y`.
 
@@ -219,6 +219,56 @@ The different data types in Erlang have one thing in common: they can all be com
 There are two kinds of operators for equality comparisons in Erlang. The first one is the `exact equality`, written` =:=`, which returns true only if both sides are exactly the same. For example, `42 =:= 42`. The negative form `(exact inequality)` is written `=/=`, as,  for example  `1 =/= 2`.
 Exact equality is the preferred kind of equals operator when you’re comparing terms in general - it is also used in pattern matching. But it means that integers and floating-point numbers are considered to be different, even if they’re as similar as could be. For instance, `2 =:= 2.0` returns `false`. If you’re comparing numbers in general (or perhaps tuples containing numbers, like vectors) in a mathematical way, you should instead use the arithmetic equality operator, written  `==`. This compares numbers by coercing integers to floating point as necessary. Hence, `2 == 2.0` returns `true`.
 
+### 2.10 Maps
+Maps are a set of key to value associations. These associations are encapsulated with `#{` and `}`. To create an association from `"key"` to `value 42`:
+```erlang
+> #{ "key" => 42 }.
+#{"key" => 42}
+```
+
+If tuples are fixed-position containers and lists are sequential collections, **maps are Erlang’s key-value associative data structure**. Maps were added relatively late (OTP 17), so older Erlang code often leans heavily on `records` and `proplists`. Modern Erlang uses maps constantly. Maps are not ordered collections, any terms are allowed as key,  maps are immutable updating creates a new map.
+
+Map uses `#{}`, key-value separator `=>`,  accessing value:
+```erlang
+>1 M = #{name => "Jane"}.
+#{name = "Jane"}
+>2 maps:get(name, M).
+"Jane"
+```
+Updating: Add
+```erlang
+>1 M1 = #{name => "John"}.
+#{name => "John"}
+>2 M2 = M1#{age => 25}.
+#{name => "John", age => 25}
+```
+Updating: Replacing
+```erlang
+>3 M3 = M2#{age => 26}.
+#{name => "John", age => 26}
+```
+For strict updates only use `:=` ; This only updates if the key exists. Pattern Matching also works with maps:
+```erlang
+>4 #{name := Name, age := Age} = #{name => "John", age => 26}.
+#{name => "John",age => 26}
+```
+
+### Core commands to remember
+
+| Operation     | Syntax                    |
+| ------------- | ------------------------- |
+| Create        | `#{a => 1}`               |
+| Access        | `M#{a}`                   |
+| Safe get      | `maps:get(a, M, Default)` |
+| Add/update    | `M#{a => 2}`              |
+| Strict update | `M#{a := 2}`              |
+| Remove        | `maps:remove(a, M)`       |
+| Keys          | `maps:keys(M)`            |
+| Values        | `maps:values(M)`          |
+| Merge         | `maps:merge(M1,M2)`       |
+| Size          | `map_size(M)`             |
+
+
 # 3.Modules and Functions
 Erlang has modules, which are containers for program code. Each module has a unique name, which is specified as an atom.
 `tut.erl`
@@ -254,6 +304,27 @@ Calling a function from another module in this form `lists:rverse([1, 2, 3, 4])`
 The number of arguments a function takes is called `arity`; a function that takes zero argument is `nullary fucntion`, one argument is `unary function`, two arguments `binary function`, three arguments `ternary function`. The full name of a function must always include the arity (written with a slash as separator). `double/1`.
 Like any other programming language, Erlang comes with a standard library of useful functions. These are spread over a large number of modules, but some standard library modules are more commonly used than others. In particular, the module named `erlang` contains functions that are central to the entire Erlang system, which everything else builds on. Another useful module that you’ve seen already is the `lists` module. The `io` module handles basic text input and output. The `dict` module provides hash-based associative arrays (dictionaries), the `array` module provides extensible integer-indexed arrays, and so forth. Some functions are involved with things that are so low-level that the functions are an intrinsic part of the language and the runtime system. These are commonly referred to as `built-in functions (BIFs)`, and like the Erlang runtime system, they’re implemented in the C programming language. All functions in the `erlang` module are `BIF`.
 
+# 4. Variables and Pattern matching
+Erlang variables begin with an uppercase letter, lowercase letters are reserved for atoms.:
+```erlang
+Z
+Name
+ShoeSize
+ThisIsAVeryLongVariableName
+```
+You can also begin a variable with an underscore character. In that case, the second character is by convention usually an uppercase character:
+```erlang
+_Something
+_X
+_this_my_look_like_an_atom_but_is_really_a_variable
+```
+There is a small difference in functionality here: the compiler normally warns you if you assign a value to a variable and then don’t use that variable for anything. This catches a lot of silly mistakes, so don’t turn off that warning. Instead, when you want to use a variable for something to make the program more readable, you can use one that starts with an underscore.
+Erlang variables are strictly single assignment, when a variable is bound to a value - that variable will hold that value throughout its entire `scope`.The simplest form of assignment in Erlang is through the `=` operator. This is a `match operator`.
+Pattern matching serves the following important purposes:
+- Choosing control flow branches
+- Performing variable assignments(binding)
+- Decomposing data structures(selecting and extracting parts)
+# 5. Function and Clauses
 
 
 
