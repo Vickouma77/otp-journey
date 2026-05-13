@@ -492,6 +492,8 @@ case [1,2,3] of
 end. %{head,1,tail,[2,3]}
 ``` 
 
+# 7. Funs
+
 
 
 

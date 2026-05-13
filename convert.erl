@@ -1,18 +1,25 @@
 -module(convert).
 -export([format_temps/1]).
 
-format_temps([]) ->
-  ok;
+%%Convert a list of city temperatures to Celsius.
+%%Input is a list of tuples like: 
+%%  {CityName, {f, Fahrenheit}} or already-converted entries.
+format_temps(List_of_cities) ->
+  convert_list_to_c(List_of_cities).
 
-format_temps([City | Rest]) ->
-  print_temp(convert_to_celsius(City)),
-  format_temps(Rest).
+%%Convert entries in a list to Celsius.
+%%Recursive case:
+%%  Convert Fahrenheit entry, then continue with Rest.
+convert_list_to_c([{Name, {f, F}} | Rest]) ->
+  Converted_city = {Name, {c, (F - 32) * 5 / 9}},
+  [Converted_city | convert_list_to_c(Rest)];
 
-convert_to_celsius({Name, {c, Temp}}) -> % No conversion needed
-  {Name, {c, Temp}};
+%%Recursive case:
+%%  Keep non-Fahrenheit entries as-is, then continue with Rest.
+convert_list_to_c([City | Rest]) ->
+  [City | convert_list_to_c(Rest)];
 
-convert_to_celsius({Name, {f, Temp}}) -> % Do the conversion
-  {Name, {c, (Temp - 32) * 5 / 9}}.
-
-print_temp({Name, {c, Temp}}) ->
-  io:format("~-15w ~w c~n", [Name, Temp]).
+%%Base case:
+%%  Converting an empty list returns an empty list.
+convert_list_to_c([]) ->
+  [].
