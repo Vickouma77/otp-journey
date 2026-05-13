@@ -591,6 +591,9 @@ Common pitfalls:
 - Shadowing warning - If you define a variable inside the `fun` that has the same name as an enclosed variable, you may trigger compiler warnings.
 - Misuse - While powerful, using closures for complex state management can make code harder to reason about; passing explicit parameters is often preferred.
 
+# 8.Exceptions, try, and catch
+
+
 
 
 
