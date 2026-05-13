@@ -490,9 +490,110 @@ case [1,2,3] of
     [H|T] ->
         {head, H, tail, T}
 end. %{head,1,tail,[2,3]}
-``` 
+```
+
+ As a special case, if expressions are a stripped-down variant of case expressions, without a specific value to switch on and without patterns. You can use an if expression when you want to have one or more clauses that only depend on what is in the guards.
+ ```erlang
+ if
+    Condition 1 ->
+        Action 1;
+    Condition 2 ->
+        Action 2;
+    Condition 3 ->
+        Action 3;
+    Condition 4 ->
+        Action 4
+end
+ ```
+ Notice that there is no `;` before `end`. Conditions do the same as guards, that is, tests that succeed or fail. Erlang starts at the top and tests until it finds a condition that succeeds. Then it evaluates (performs) the action following the condition and ignores all other conditions and actions before the `end`. If no condition matches, a run-time failure occurs. A condition that always succeeds is the atom `true`. This is often used last in an `if`, meaning, do the action following the `true` if all other conditions have failed.
+ Example:
+ ```erlang
+-module(examp).
+-export([test_if/2]).
+
+test_if(A, B) ->
+    if
+        A == 5 ->
+            io:format("A == 5~n", []),
+            a_equals_5;
+        B == 6 ->
+            io:format("B == 6~n", []),
+            b_equals_6;
+        A == 2, B == 3 ->                      %That is A equals 2 and B equals 3
+            io:format("A == 2, B == 3~n", []),
+            a_equals_2_b_equals_3;
+        A == 1 ; B == 7 ->                     %That is A equals 1 or B equals 7
+            io:format("A == 1 ; B == 7~n", []),
+            a_equals_1_or_b_equals_7
+    end.
+ ```
 
 # 7. Funs
+Funs (functional objects) in Erlang are anonymous functions, or closures, that can be defined in-place and passed as arguments to other functions, facilitating higher-order programming. They are used for abstracting common code patterns—like `lists:map/2` or `lists:foreach/2`—and are defined using the `fun (Args) -> Body end` syntax, or by referencing existing functions using `fun FunctionName/Arity`.  Funs can:  assign functions to variables, pass functions as arguments, return functions from other functions, store functions inside data structures, create closures. They are essential for: higher order functions, list processing, callbacks, concurrent behavior construction.
+#### 7.1 Funs as aliases for existing functions
+```erlang
+%% Create alias
+fun existing_function/1
+
+%% Or bind it to a variable
+F = fun existing_function/1
+
+%% Or pass directly to another function
+another_function(fun existing_function/1)
+```
+*High-order functions* => These are functions that fun as input, or return fun as a result, they are used for for all sorts of things that delegates, adapters, commands, strategies. e.t.c
+
+#### 7.2 Anonymous Functions
+The syntax starts with the keyword `fun`, followed by the argument list, the arrow `->`, the body, and finally the keyword `end`.
+```erlang
+% Defining a simple fun that adds two numbers
+Add = fun(X, Y) -> X + Y end.
+
+% Calling the fun
+Result = Add(5, 10). % Result is 15
+```
+Example:
+```erlang
+Area = fun({circle, Radius}) ->
+				Radius * Radius * math:pi;
+		   ({square, Side}) ->
+			     Side * Side;
+		    ({rectangle, Height, Width}) ->
+			     Height * Width
+		end
+```
+#### 7.3 Closures
+The word closure is often used interchangeably with `fun` or `lambda expression`, but more specifically it refers to the common and extremely useful case when you’re accessing variables within `fun ... end` that are bound outside the fun. The fun value will then also encapsulate the current values of those variables. Erlang closures are anonymous functions (`fun`) that capture and retain variables from their surrounding scope at the time of creation, even when executed elsewhere. They enable passing logic with specific data contexts, allowing variables from the outer scope to be "enclosed" and utilized later, frequently used with `spawn/1` for concurrency.
+**Key Aspects of Erlang Closures:**
+- **Capturing Scope:** A `fun` can read variables defined in its parent function.
+- **Immutable Variables:** Since Erlang variables are immutable, the value captured is the value at the moment the `fun` is defined.
+- **Usage:** Commonly used in higher-order functions like `lists:map/2` or `lists:foldl/3` to pass custom logic.
+- **Process Spawning:** Essential for passing state to a new lightweight process, e.g., `spawn(fun() -> do_work(State) end)`.
+
+```erlang
+-module(closure_example).
+-export([start/0]).
+
+start() ->
+    Greeting = "Hello",
+    % The anonymous function captures 'Greeting'
+    SayHello = fun(Name) -> io:format("~s, ~s!~n", [Greeting, Name]) end,
+    
+    % Pass the closure to another function
+    do_something(SayHello).
+
+do_something(Function) ->
+    % 'Greeting' is still accessible here, despite being out of scope
+    Function("World").
+% Output: Hello, World!
+```
+Common pitfalls: 
+- Shadowing warning - If you define a variable inside the `fun` that has the same name as an enclosed variable, you may trigger compiler warnings.
+- Misuse - While powerful, using closures for complex state management can make code harder to reason about; passing explicit parameters is often preferred.
+
+
+
+
 
 
 
