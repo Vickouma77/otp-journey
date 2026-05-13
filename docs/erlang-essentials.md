@@ -436,6 +436,61 @@ Double = fun(X) -> X * 2 end.
 ```
 
 # 6. Cases and Expressions
+A `case` expression evaluates a value and matches it against clauses.
+```erlang
+case Expression of
+    Pattern1 ->
+        Result1;
+
+    Pattern2 ->
+        Result2
+end.
+```
+It means:  Evaluate `Expression` ,Compare result against patterns, Execute first matching clause, Return its value
+example:
+```erlang
+case 2 of
+    1 -> one;
+    2 -> two;
+    3 -> three
+end.   %Result -> 2
+```
+Erlang cases are not statements, they return values and therefore you can  bind them.:
+```erlang
+Result =
+    case 5 of
+        5 -> matched;
+        _ -> no_match
+    end.
+```
+They can also be used directly:
+```erlang
+io:format("~p~n",
+    [case X of
+        0 -> zero;
+        _ -> nonzero
+     end]).
+```
+Tuple matching:
+```erlang
+case {ok, "data"} of
+    {ok, Value} ->
+        Value;
+
+    {error, Reason} ->
+        Reason
+end.
+```
+List matching:
+```erlang
+case [1,2,3] of
+    [] ->
+        empty;
+
+    [H|T] ->
+        {head, H, tail, T}
+end. %{head,1,tail,[2,3]}
+``` 
 
 
 

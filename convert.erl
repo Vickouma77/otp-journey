@@ -1,5 +1,4 @@
 -module(convert).
-
 -export([format_temps/1]).
 
 format_temps([]) ->
