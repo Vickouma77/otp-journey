@@ -325,6 +325,119 @@ Pattern matching serves the following important purposes:
 - Performing variable assignments(binding)
 - Decomposing data structures(selecting and extracting parts)
 # 5. Function and Clauses
+Functions and clauses are where Erlang’s design really starts to click. They lean heavily on:
+* Pattern Matching
+* Multiple clauses
+* Guards
+* Recursions instead of loops
+
+This is the core of everything: `process behavior`, `OTP call backs`, `message handling`.
+The standard library function `io:format(...)` is the normal way of writing text to the standard `output stream` in Erlang. It takes two arguments: the first is a format string, and the second is a list of terms to be printed.:
+```erlang
+print(Term) ->
+  io:format("The value of Term is: ~p.~n", [Term]).
+```
+The escape code `~p` in the format string means to pretty-print an Erlang term. The escape code `~n` means “insert a line break,” so you get a new line after the message. The escape code `~w` means “print an Erlang term in its raw form” without fancy line breaking and without printing lists as double-quoted strings even if they contain only printable character codes.
+##### 5.1 What is a Function
+A function is named block of logic. The general form of a function is:
+```erlang
+name(Arguments) ->
+  expression.
+```
+example:
+```erlang
+add(A, B) ->
+  A + B.
+```
+Function call:
+```erlang
+add(3, 7) % 16
+```
+
+`Arity` means the number of arguments or operands in a function, operator or relation takes in logic, mathematics and computer science. So the function above is referred to as : `add/2`. `Arity` matters because:
+```erlang
+%% foo/1 and foo/2 ==> both are valid
+foo(X)
+foo(X, Y)
+```
+are two different functions. In short, Erlang identifies functions by **Name + Arity** . Everything returns a value -- Functions always return the value of the last expression. No explicit return value as the last expression is always the return value.
+##### 5.2 What is a Clause
+A clause is one version of a function, a function can have multiple clauses. Example:
+```erlang
+%% This is one function describe/1 with
+%% three clauses
+describe(0) ->
+  zero;
+describe(1) ->
+  one;
+describe(N) -> 
+  many.
+```
+Erlang checks clauses top to bottom, the first matching clause wins. Clause order matters A lot.
+Instead of writing conditionals inside functions, Erlang often expresses logic through clause patterns.
+```erlang
+handle({ok, Data}) -> 
+  Data;
+handle({error, Reason}) ->
+  Reason.
+```
+Matching Atoms; the act like enum variants:
+```erlang
+status(ok) ->
+  success;
+status(error) ->
+  failed.
+```
+
+##### 5.3 Guards
+Sometimes patterns aren't enough so we introduce `when condition`. Guards refine clause matching.
+```erlang
+classify(N) when N < 0 ->
+  negative;
+classify(0) ->
+  0;
+classify(N) when N > 0 ->
+  positive;
+```
+Common Guard Functions which live in the `erlang module`:
+```erlang
+is_integer(X)
+is_atom(X)
+is_list(X)
+is_binary(X)
+is_map(X)
+```
+example:
+```erlang
+describe(X) when is_integer(X) ->
+   integer;
+describe(X) when is_atom(X) ->
+   atom.
+```
+Boolean logic:
+```erlang
+andalso
+orelse
+```
+example:
+```erlang
+valid(X) when is_integer(X) andalso X > 0 ->
+    true.
+```
+
+##### 5.4 Anonymous Functions
+unnamed functions
+```erlang
+fun(Args) -> Expr end
+```
+example:
+```erlang
+Double = fun(X) -> X * 2 end.
+```
+
+# 6. Cases and Expressions
+
+
 
 
 
