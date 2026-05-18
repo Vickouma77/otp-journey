@@ -797,6 +797,48 @@ The `undef` directive can be used to remove a macro definition (if there is one)
 -define(foo, true).
 ```
 
+#### 10.4 Include Files
+An Erlang source code file can include another file by using an `include directive`, which has the following form: `-include("filename.hrl")`. The text of the included file is read by the `preprocessor` and is inserted at the point of the include directive. Such files generally contain only declarations, not functions; and because they’re typically included at the top of the source file for the module, they’re known as header files. By convention, an Erlang header file has the file name extension `.hrl.`
+To locate a file specified by a directive such as `-include("some_file.hrl")`., the Erlang compiler searches in the current directory for the file called `some_file.hrl`, and also in any other directories that are listed in the include path. You can add directories to the include path by using the `–I flag` to `erlc`, or by an option `{i,Directory}` to the c(...) shell function, as in:
+```erlang
+1> c("src/my_module", [ {i, "../include/"} ]).
+```
+If your code depends on a header file that is part of some other Erlang application or library, you have to know where that application is installed so you can add its header file directory to the include path. In addition, the install path may contain a version number, so if you upgraded that application, you might need to update the include path as well. Erlang has a special include directive for avoiding most of this trouble: `include_lib`. For example:
+```erlang
+-include_lib("kernel/include/file.hrl").
+-include_lib("stdlib/include/assert.hrl").
+-include_lib("myapp/include/my_records.hrl").
+```
+
+#### 10.5 Conditional compilation
+Conditional compilation means that certain parts of the program may be skipped by the compiler, depending on some condition. This is often used to create different versions of the program, such as a special version for debugging. The following `preprocessor` directives control which parts of the code may be skipped, and when:
+```erlang
+-ifdef(MacroName).
+-ifndef(MacroName).
+-else.
+-endif.
+```
+As the names indicate, `ifdef` and `ifndef` test whether a macro is defined or isn’t defined. For each `ifdef` or `ifndef`, there must be a corresponding `endif` to end the conditional section. Optionally, a conditional section may be divided in two halves by an else. For example, the following code exports the function foo/1 only if the `DEBUG` macro is defined (to any value):
+```erlang
+-ifdef(DEBUG).
+-export([foo/1]).
+-endif.
+```
+To control this from the command line or from your build system, you can define a macro by giving an option `{d,MacroName,Value}` to the shell `c function`, or you can pass the option `Dname=value` to the `erlc` command. Because the macro value doesn’t matter here, true is usually used. Because Erlang’s parser works on one period-terminated declaration (called a form) at a time, you can’t use conditional compilation in the middle of a function definition, because the period after the `ifdef` would be read as the end of the function. Instead, you can conditionally define a macro, and use the macro within the function, like this:
+```erlang
+-ifdef(DEBUG).
+-define(show(X), io:format("The value of X is: ~w.~n", [X])).
+-else.
+-define(show(X), ok).
+-endif.
+foo(A) ->
+	?show(A),
+	...
+```
+If this is compiled with DEBUG defined, the foo function prints the value of A on the console before it continues with whatever the function is supposed to do. If not, the first thing in the function will be the atom `ok`, which is a constant; and because it isn’t used for anything, the compiler will optimize it away as if it hadn’t been there.
+
+# 11. Processes
+
 
 
 
