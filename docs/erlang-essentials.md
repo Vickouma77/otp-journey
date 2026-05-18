@@ -177,6 +177,54 @@ This combines the empty list on the right of the `|` with the additional element
 
 ##### The structure of a list
 Basically, lists are created from the empty list (nil) and so called `list cells` which add one element at a time on top of an existing list, building a `singly linked` list in memory. Each such cell uses only two words of memory: one for the value (or a pointer to the value), known as the `head`, and one to the pointer of to the rest of the list, called the `tail`. List cells are sometimes called `cons cells` from `(list constructor)`, he action of adding a `cons cell` is known as ***consing*** 
+
+##### List comprehensions
+A comprehension is a compact notation for describing operations on sets or sequences of items (like lists). They are inspired by mathematical set notation `{x | x ∈ N, x > 0}` and are often more readable and efficient than manual recursion or `lists:map/2` and `lists:filter/2`. The basic anatomy of an Erlang list comprehension is: `[Expression || Generator, Condition1, Condition2, ...]` .A list comprehension consists of three main parts:
+- **The Template (`Expression`):** What you want the new list elements to look like.
+- **The Generator (`Pattern <- List`):** Where the data is coming from.
+- **The Filters (Optional):** Boolean expressions to prune the data.
+Example: Doubling Numbers
+```erlang
+L = [1, 2, 3, 4].
+[X * 2 || X <- L].
+%% Output: [2, 4, 6, 8]
+```
+Filters allow you to decide which elements make it into the final list. If the filter evaluates to `true`, the element is kept; if `false`, it is skipped.:
+```erlang
+L = [1, 2, 3, 4, 5, 6].
+[X || X <- L, X rem 2 == 0].
+%% Output: [2, 4, 6]
+```
+***Multiple Generators (The Cartesian Product)*** - You can use multiple generators in a single comprehension. Erlang will iterate through them like nested loops, with the rightmost generator varying fastest.
+Example: Combining Suits and Values:
+```erlang
+Suits = [spades, hearts].
+Values = [ace, king].
+[{S, V} || S <- Suits, V <- Values].
+%% Output: [{spades, ace}, {spades, king}, {hearts, ace}, {hearts, king}]
+```
+Generators aren't just for variables; you can pattern match directly within them. If an element doesn't match the pattern, it is **silently ignored** (acting as an implicit filter).
+```erlang
+Users = [{user, "Alice", 25}, {admin, "Bob", 40}, {user, "Charlie", 30}].
+[Name || {user, Name, _Age} <- Users].
+%% Output: ["Alice", "Charlie"]
+%% Note: "Bob" was skipped because the pattern {user, ...} didn't match {admin, ...}.
+```
+Erlang also supports **`Bitstring/Binary` Comprehensions**. These use `<=` instead of `<-` and double angle brackets.A bitstring comprehension looks much like a list comprehension but is enclosed in <<...>> rather than in [...].
+
+Example: Converting a Binary to a List:
+```erlang
+Bin = <<1, 2, 3, 4>>.
+[X || <<X>> <= Bin].
+%% Output: [1, 2, 3, 4]
+```
+If you have a binary of `RGB` values (3 bytes per pixel), you can process them elegantly:
+```erlang
+Pixels = <<255, 0, 0, 0, 255, 0>>. % Red and Green pixels
+[ {R, G, B} || <<R:8, G:8, B:8>> <= Pixels ].
+%% Output: [{255,0,0}, {0,255,0}]
+```
+
 ### 2.6.Strings
 A double-quoted string in Erlang is merely an alternative way of writing a list of character codes.  For example, these:
 ```erlang
@@ -435,6 +483,45 @@ example:
 Double = fun(X) -> X * 2 end.
 ```
 
+##### 5.5 Built-in Functions
+`BIFs` are functions that for some reason are built-in to the Erlang virtual machine. `BIFs` often implement functionality that is impossible or is too inefficient to implement in Erlang. Some `BIFs` can be called using the function name only but they are by default belonging to the `erlang` module. For example, the call to the `BIF` `trunc` below is equivalent to a call to `erlang:trunc`.
+```erlang
+2004 / 400 = 5.01
+trunc(5.01) = 5
+5 * 400 = 2000
+```
+
+Only a few `BIFs` can be used in guards, and you cannot use functions you have defined yourself in guards.:
+```erlang
+75> trunc(5.6).
+5
+76> round(5.6).
+6
+77> length([a,b,c,d]).
+4
+78> float(5).
+5.0
+79> is_atom(hello).
+true
+80> is_atom("hello").
+false
+81> is_tuple({paris, {c, 30}}).
+true
+82> is_tuple([paris, {c, 30}]).
+false
+```
+Now for some `BIFs` that cannot be used in guards:
+```erlang
+83> atom_to_list(hello).
+"hello"
+84> list_to_atom("goodbye").
+goodbye
+85> integer_to_list(22).
+"22"
+```
+These three `BIFs` do conversions that would be difficult (or impossible) to do in Erlang.
+
+
 # 6. Cases and Expressions
 A `case` expression evaluates a value and matches it against clauses.
 ```erlang
@@ -592,9 +679,123 @@ Common pitfalls:
 - Misuse - While powerful, using closures for complex state management can make code harder to reason about; passing explicit parameters is often preferred.
 
 # 8.Exceptions, try, and catch
+Exception an alternative way of returning from a function, with the difference that it keeps going back to the caller, and to the caller’s caller, and so on, until either someone catches it or it reaches the initial call of the process (in which case the process dies).
+In Erlang, exception handling is **not the primary control-flow mechanism**. The language leans hard into the “**let it crash**” philosophy from the OTP ecosystem. Instead of wrapping everything in defensive `try/catch`, Erlang assumes processes are lightweight and disposable. If one fails, a supervisor restarts it.
+Erlang has three kinds of Exceptions:
+	- `error` Runtime errors; Division by zero, pattern matching failure, calling undefined functions, Bad arguments.
+	- `exit`  process termination signals. isn’t considered unexpected, so it isn’t reported to the error logger.
+	- `throw` Non-local control transfer, this is not an error, It’s a mechanism for abruptly transferring control, similar to a controlled jump. This kind of exception is for user-defined purposes.
+Summary:
 
+| Class   | Meaning             | Typical use               |
+| ------- | ------------------- | ------------------------- |
+| `error` | Runtime failure     | Bugs / invalid operations |
+| `exit`  | Process termination | Crash / shutdown          |
+| `throw` | Control flow escape | Internal logic            |
 
+### 8.1 Throwing (raising) exceptions
+For each of the exception classes, there is a corresponding built-in function to throw (or raise) such an exception:
+```erlang
+throw(SomeTerm)
+exit(Reason)
+erlang:error(Reason)
+```
+Because `throw` and `exit` are common, they’re auto-imported: you don’t need to prefix them with `erlang`:. In normal code, you typically don’t need to raise error exceptions (but it can be a good thing to do if you’re writing a library and want to throw errors like `badarg`, like Erlang’s standard library functions).
+As a special case, if a process calls exit(normal), and the exception isn’t caught, that process terminates as if it had finished the job it was spawned to do. This means that other (linked) processes won’t regard it as an abnormal termination (as they will for all other exit reasons).
+### 8.2 Using try...catch
+Introduced to replace the older, clunkier `catch` expression, the `try` block is the robust way to handle exceptions. It allows you to separate the "happy path" from the error handling logic.
+```erlang
+try Expression of
+    SuccessfulPattern -> 
+        %% Logic if Expression returns a value
+        Result
+catch
+    Class:Reason:StackTrace -> 
+        %% Logic if an exception occurs
+        handle_error(Class, Reason)
+after
+    %% Cleanup code (runs regardless of success/failure)
+    close_socket(Socket)
+end.
+```
+- **`Class:`** This is where you specify `error`, `exit`, or `throw`. If omitted, it defaults to `throw`.
+- **`StackTrace`:** In modern Erlang (OTP 21+), you can explicitly bind the stack trace to a variable for logging.
+- **`After:`** This is your `finally` block. Great for closing file descriptors or database connections.
 
+# 9. Records
+Erlang records provide a way to define structured data with named fields, acting like a lightweight "struct" (similar to C structs or records in Pascal). They are syntactic sugar over plain tuples— the compiler translates all record operations into equivalent tuple operations at compile time. This means records have no runtime overhead compared to tuples but offer much better readability and maintainability.
+A record is defined as:
+```erlang
+-record(name_of_record, {
+	field_name1 = default1, 
+	field_name2 = default2, 
+	field_name3 = default3, 
+	......
+}).
+```
+example:
+```erlang
+-record(person, {
+    name,           % defaults to → undefined
+    age = 0,        % Default value
+    email = undefined,
+    active = true
+}).
+```
+- Field names are atoms.
+- You can specify default values with `= Default.`
+- Fields without defaults get the atom `undefined` if not provided.
+- The record name (person) becomes the first element of the underlying tuple.
+
+Creating Records (Done in a macro-like transformation) , has the following syntax:
+```erlang
+P1 = #person{name = "Alice", age = 30}.
+% Equivalent to: {person, "Alice", 30, undefined, true}
+P2 = #person{}.  % All defaults: {person, undefined, 0, undefined, true}
+P3 = #person{name = "Bob", email = "bob@example.com"}.
+```
+Accessing fields:
+```erlang
+Name = P1#person.name.     % "Alice"
+Age  = P1#person.age.      % 30
+```
+Updating records (records are immutable so updating creates a new record):
+```erlang
+P4 = P1#person{age = 31, active = false}.
+% #person{name="Alice", age=31, email=undefined, active=false}
+```
+You can update multiple fields at once. Unmentioned fields keep their values.
+Pattern matching:
+```erlang
+print_person(#person{name = N, age = A, active = true}) ->
+    io:format("~s is ~p years old and active~n", [N, A]);
+print_person(#person{name = N}) ->
+    io:format("~s (inactive)~n", [N]).
+```
+
+# 10. `Preprocessing` and include files
+Erlang has a `preprocessor` similar to the one used in `C and C++`, which means it’s a token-level `preprocessor`. It works on the sequence of tokens produced by splitting the source file into separate words and symbols, rather than on the characters of the text. This makes it easier to reason about but also limits what it can do. The `preprocessor` always runs as part of the compilation process and performs three important tasks:` macro expansion`, `file inclusion`, and `conditional compilation`.
+#### 10.1 Defining and using macros
+You can define a macro with or without parameters using the define directive, as in the following examples:
+```erlang
+-define(PI, 3.14).
+-define(pair(X, Y), {X, Y}).
+```
+Macro names can be written as Erlang variables or atoms, but it’s traditional to use all uppercase for constants and mostly lowercase for other macros. To expand a macro at some point in the source code (following its definition), you must prefix it with a question mark:
+```erlang
+circumference(Radius) -> Radius * 2 * ?PI.  
+%% circumference(Radius) -> Radius * 2 * 3.14.
+
+pair_of_pairs(A, B, C, D) -> ?pair( ?pair(A, B), ?pair(C, D) ).
+%% pair_of_pairs(A, B, C, D) -> { {A, B}, {C, D} }.
+```
+#### 10.2 `Undefining` a macro
+The `undef` directive can be used to remove a macro definition (if there is one). For example, after the following lines:
+```erlang
+-define(foo, false).
+-undef(foo).
+-define(foo, true).
+```
 
 
 
