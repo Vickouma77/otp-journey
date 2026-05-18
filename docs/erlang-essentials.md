@@ -774,7 +774,7 @@ print_person(#person{name = N}) ->
 ```
 
 # 10. `Preprocessing` and include files
-Erlang has a `preprocessor` similar to the one used in `C and C++`, which means it’s a token-level `preprocessor`. It works on the sequence of tokens produced by splitting the source file into separate words and symbols, rather than on the characters of the text. This makes it easier to reason about but also limits what it can do. The `preprocessor` always runs as part of the compilation process and performs three important tasks:` macro expansion`, `file inclusion`, and `conditional compilation`.
+Erlang has a `preprocessor` similar to the one used in `C and C++`, which means it’s a token-level `preprocessor`. It works on the sequence of tokens produced by splitting the source file into separate words and symbols, rather than on the characters of the text. This makes it easier to reason about but also limits what it can do. The `preprocessor` always runs as part of the compilation process and performs three important tasks:` macro expansion`, `file inclusion`, and `conditional compilation`.In Erlang, **`preprocessing`** is the step that happens _before compilation_ where the source code is transformed. It’s handled by the Erlang `preprocessor` (`epp`).
 #### 10.1 Defining and using macros
 You can define a macro with or without parameters using the define directive, as in the following examples:
 ```erlang
@@ -836,6 +836,17 @@ foo(A) ->
 	...
 ```
 If this is compiled with DEBUG defined, the foo function prints the value of A on the console before it continues with whatever the function is supposed to do. If not, the first thing in the function will be the atom `ok`, which is a constant; and because it isn’t used for anything, the compiler will optimize it away as if it hadn’t been there.
+
+|Directive|Purpose|
+|---|---|
+|`-define`|Define macro|
+|`-undef`|Remove macro|
+|`-ifdef`|Compile if macro exists|
+|`-ifndef`|Compile if macro doesn't exist|
+|`-else`|Alternative branch|
+|`-endif`|End condition|
+|`-include`|Include file|
+|`-include_lib`|Include library file|
 
 # 11. Processes
 
