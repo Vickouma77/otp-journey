@@ -55,12 +55,12 @@ server_node() ->
 %%% [{ClientPid1, Name1},{ClientPid2, Name2},...]
 server(User_List) ->
     receive
-        {from, logon, Name} ->
+        {From, logon, Name} ->
             New_User_List = server_logon(From, Name, User_List),
             server(New_User_List);
         {From, logoff} ->
             New_User_List = server_logoff(From, User_List),
-            server(New_User_List)
+            server(New_User_List);
         {From, message_to, To, Message} ->
             server_transfer(From, To, Message, User_List),
             io:format("list is now: ~p~n", [User_List]),
@@ -69,7 +69,7 @@ server(User_List) ->
 
 %%% Start server
 start_server() ->
-    register(messenger, spawn(messanger, server, [[]])).
+    register(messenger, spawn(messenger, server, [[]])).
 
 %%% Server adds a new user to the user list.
 server_logon(From, Name, User_List) ->
@@ -105,7 +105,7 @@ server_transfer(From, Name, To, Message, User_List) ->
             From ! {messenger, receiver_not_found};
         {ToPID, To} ->
             ToPID ! {message_from, Name, Message},
-            From ! {message, sent}
+            From ! {messenger, sent}
     end.
 
 %%% User commands
@@ -123,7 +123,7 @@ message(ToName, Message) ->
     case whereis(mess_client) of %% Test if the client is running
         undefined -> 
             not_logged_on;
-        _ -> mess_client ! {messag_to, ToName, Message},
+        _ -> mess_client ! {message_to, ToName, Message},
         ok
     end.
 
