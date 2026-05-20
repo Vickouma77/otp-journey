@@ -40,15 +40,22 @@
 %%% To client: logoff
 %%% To client: {message_to, ToName, Message}
 %%% 
-%%% Configuration: change the server_node() function to return the
-%%% name of the node where the messenger server runs
+%%% Configuration: use set_server_node(Node) to target a remote server
+%%% node, or change server_node() if you prefer a fixed value
 
 -module(messenger).
 
--export([start_server/0, server/1, logon/1, logoff/0, message/2, client/2]).
+-export([start_server/0, server/1, logon/1, logon/2, logoff/0, message/2, client/2, set_server_node/1]).
 
 server_node() ->
-    messenger@super.
+    case persistent_term:get({messenger, server_node}, undefined) of
+        undefined -> node();
+        Node -> Node
+    end.
+
+set_server_node(Node) ->
+    persistent_term:put({messenger, server_node}, Node),
+    ok.
 
 %%% The server process for the "messenger"
 %%% the user list has the format 
@@ -110,9 +117,12 @@ server_transfer(From, Name, To, Message, User_List) ->
 
 %%% User commands
 logon(Name) ->
+    logon(server_node(), Name).
+
+logon(Server_Node, Name) ->
     case whereis(mess_client) of
         undefined ->
-            register(mess_client, spawn(messenger, client, [server_node(), Name]));
+            register(mess_client, spawn(messenger, client, [Server_Node, Name]));
         _ -> already_logged_on
     end.
 
@@ -140,9 +150,11 @@ client(Server_Node) ->
             exit(normal);
         {message_to, ToName, Message} ->
             {messenger, Server_Node} ! {self(), message_to, ToName, Message},
-            await_result();
+            await_result(),
+            client(Server_Node);
         {message_from, FromName, Message} ->
-            io:format("Message from ~p: ~p~n", [FromName, Message])
+            io:format("Message from ~p: ~p~n", [FromName, Message]),
+            client(Server_Node)
     end.
 
 %%%  wait for a response from the server
