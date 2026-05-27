@@ -849,8 +849,128 @@ If this is compiled with DEBUG defined, the foo function prints the value of A o
 |`-include_lib`|Include library file|
 
 # 11. Processes
+Erlang processes are the foundation of `concurrency`, `fault tolerance`,  `scalability`, `distributed systems`, `otp behaviors`
 
+An Erlang process is a `light weight` unit of execution, isolated from other processes, scheduled by the `BEAM VM` and communicates through message passing. Erlang process are extremely cheap with the ability to run millions simultaneously, they also do not share memory.
+
+Processes communicate **only** by sending messages asynchronously.
+- Send operator: `Pid ! Message`
+- Receive: `receive ... end`
+**Key characteristics**:
+- Messages are copied (no shared memory).
+- Sending is non-blocking.
+- Each process has a **mailbox** (`queue`) where messages arrive in order.
+- receive pattern-matches messages and can be selective.
+```erlang
+ping() ->
+	receive
+		{pong, Pid} ->
+			io:format("ping received pong~n"),
+			Pid ! {ping, self()},
+			ping
+	end.
+pong() ->
+	receive
+		{ping, Pid} ->
+			io:format("pong received ping~n"),
+			Pid ! {pong, self()},
+			pong()
+	end.
+```
+
+#### 11.1 Creating Processes
+There are two types of spawn functions: the ones that take a (`nullary`) fun as the starting point for the new process, and the ones that take a module name, a function name, and a list of arguments:
+```erlang
+Pid = spawn(fun() -> do_something end)
+Pid = spawn(Module, Function, ListOfArgs)
+```
+The latter require that the named function is exported from its module, and initial data can only be passed through the argument list. On the other hand, they always look up the latest version of the module and are generally better for starting a process on a remote machine that may not have the exact same version of the module as you do on your local machine. For example:
+```erlang
+Pid = spawn(Node, Module, Function, ListOfArgs)
+```
+There is also a version named spawn_opt(...) that takes a list of additional options, as in
+```erlang
+Pid = spawn_opt(fun() -> do_something() end, [monitor])
+```
+One of the options you can give to spawn_opt(...) is link. There is also a simple function alias for this:
+```erlang
+Pid = spawn_link(...)
+```
+Using `spawn_link(...)` ensures that the link is created along with the new process as an atomic operation, preventing race conditions that can occur if you spawn the process first and try to link to it afterward using link`(Pid)`.All these spawn functions return the process identifier of the new process, so that the parent process can communicate with it. But the new process doesn’t know its parent process unless this information is passed to it somehow. When a process wants to find its own pid, it can call the built-in function `self()`. For example, the following code spawns a child process that knows its parent:
+```erlang
+Parent = self(),
+Pid = spawn(fun() -> myproc:init(Parent) end)
+```
+This assumes that `myproc:init/1` is the entry point for the child process that you want to start, and that it takes a parameter that is the parent process ID. Note in particular that the call to self() must be made outside of fun...end, because otherwise it will be executed by the new child process (which is definitely not its own parent). This is why you capture the parent pid first and pass it in to the child process via a variable.
+
+#### 11.2 Monitoring A Process
+There is also an alternative to links, called `monitors`. These are a kind of unidirectional link and allow a process to monitor another without affecting it.
+```erlang
+Ref = monitor(process, Pid)
+```
+If the monitored process identified by `Pid` dies, a message containing the unique reference Ref is sent to the process that set up the monitor.
+
+example:
+```erlang
+-module(simple).
+-export([start/0, loop/0]).
+
+start() ->
+	spawn(?MODULE, loop, []).
+	
+loop() ->
+	receive
+		{From, Message} ->
+			io:format("Received: ~p~n", [Message]),
+			From ! {self(), ok},
+			loop();
+		_ ->
+			loop()
+	end.
+```
 # 12. ETS Tables
+ETS stands for Erlang Term Storage. An ETS table, then, is a table containing Erlang terms (that is, any Erlang data) that can also be shared between processes. But that sounds like it goes against the fundamental ideas of referential transparency and avoiding sharing. Are we suddenly smuggling in destructive updates through the backdoor?  Two words: process semantics.
+ETS tables are created and manipulated via the standard library `ets module`. To create a new table, use the function `ets:new(Name, Options)`. The name must be given as an atom, and Options must be a list.  ETS tables — Erlang’s built-in, high-performance, in-memory key/value store. The function `ets:new/2` returns a table identifier that you can use to perform operations on the table. For example, the following creates a table and stores a couple of tuples:
+```erlang
+T = ets:new(mytable,[]),
+ets:insert(T, {17, hello}),
+ets:insert(T, {42, goodbye})
+```
+ETS table only stores rows—that is, tuples. If you want to store any other Erlang data, you need to wrap it in a tuple first. This is because one of the tuple fields is always used as the index in the table, and by default it’s the first field. (This can be changed with an option when you create the table.) Thus, you can look up rows in your table by their first elements, like this:
+```erlang
+ets:lookup(T, 17)    %%% [{17, hello}]
+```
+Common options:
+
+|Option|Meaning|
+|---|---|
+|`set`|Default. Unique keys.|
+|`ordered_set`|Sorted by key.|
+|`bag`|Multiple objects per key.|
+|`duplicate_bag`|Multiple identical objects per key.|
+|`public`|Any process can read/write.|
+|`protected`|Only owner can write, anyone can read (default).|
+|`private`|Only owner can access.|
+|`named_table`|Table can be referred to by name (atom) instead of TID.|
+|`{keypos, N}`|Which element in the tuple is the key (default: 1).|
+Example:
+```erlang
+%%% Public named table where key is in position 2 of tuple
+Table = ets:new(users, [set, public, named_table, {keypos, 2}]).
+
+ets:insert(Table, {user, 123, "Alice", "Admin"}).
+ets:insert(Table, ObjectList). % Can insert multiple
+
+ets:lookup(Table, Key). %Returns list of matching objects
+ets:lookup_element(Table, Key, Pos). % Returns specific element
+
+ets:delete(Table, Key).
+ets:delete(Table).              % Delete entire table
+ets:delete_object(Table, Object).
+```
+# 13. Recursion
+
+
 
 
 
