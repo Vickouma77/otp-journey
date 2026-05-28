@@ -953,6 +953,7 @@ Common options:
 |`private`|Only owner can access.|
 |`named_table`|Table can be referred to by name (atom) instead of TID.|
 |`{keypos, N}`|Which element in the tuple is the key (default: 1).|
+
 Example:
 ```erlang
 %%% Public named table where key is in position 2 of tuple
@@ -969,6 +970,23 @@ ets:delete(Table).              % Delete entire table
 ets:delete_object(Table, Object).
 ```
 # 13. Recursion
+Erlang relies entirely on recursion to iterate over data, process messages, and keep programs running continuously.
+Every recursive "loop" in Erlang requires two main components:
+- **The Base Case:** The condition that tells the recursion to stop (e.g., reaching the end of a list or counting down to zero).
+- **The Recursive Step:** The action performed on the current item, followed by the function calling itself with the remaining data.
+example:
+```erlang
+do_sum(N) ->
+	do_sum(N, 0).
+
+do_sum(0, Total) ->
+	Total;
+
+do_sum(N, Total) when N =/= 0 ->
+	do_sum(N-1, N + Total).
+```
+
+
 
 
 
