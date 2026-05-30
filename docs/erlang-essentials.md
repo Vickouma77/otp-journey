@@ -969,11 +969,8 @@ ets:delete(Table, Key).
 ets:delete(Table).              % Delete entire table
 ets:delete_object(Table, Object).
 ```
-# 13. Recursion
+# 13. Recursion - Function that calls itself
 Erlang relies entirely on recursion to iterate over data, process messages, and keep programs running continuously.
-Every recursive "loop" in Erlang requires two main components:
-- **The Base Case:** The condition that tells the recursion to stop (e.g., reaching the end of a list or counting down to zero).
-- **The Recursive Step:** The action performed on the current item, followed by the function calling itself with the remaining data.
 example:
 ```erlang
 do_sum(N) ->
@@ -986,7 +983,35 @@ do_sum(N, Total) when N =/= 0 ->
 	do_sum(N-1, N + Total).
 ```
 
+Every recursive "loop" in Erlang requires two main components:
+- **The Base Case:** The condition that tells the recursion to stop (e.g., reaching the end of a list or counting down to zero).
+- **The Recursive Case:** The action performed on the current item, followed by the function calling itself with the remaining data.
+```erlang
+sum([]) -> 0;                    % Base case
+sum([H|T]) -> H + sum(T).        % Recursive case
+```
+- H = Head (first element)
+- T = Tail (remaining list)
+This works, but it builds up a large call stack (not optimized by the compiler in this form).
 
+Erlang has no mutable state and no traditional loops (for, while). Recursion is the only way to repeat code in Erlang.
+
+#### 13.1 Tail Recursions
+Recursive calls can be divided into two categories: `tail recursive` and `non-tail recursive` (or body recursive as they’re sometimes called). A function is tail-recursive if the recursive call is the very last thing the function does (no pending operations after it returns). Tail-recursive functions can be optimized by the Erlang compiler into a loop (constant stack space).  `Tail call optimization` -->  when the compiler sees that a call is a tail call, it  generates a code to throw away the information about the current call from the stack before the tail call is performed.
+
+|Type|Description|Stack Usage|Recommended?|
+|---|---|---|---|
+|**Body Recursion**|Recursive call is **not** the last operation|Grows with depth|OK for small data|
+|**Tail Recursion**|Recursive call is the **very last** operation|Constant space|**Preferred**|
+using accumulators for efficiency. 
+```erlang
+sum(L) -> sum(L, 0).             % Public interface
+
+sum([], Acc) -> Acc;             % Base case - return accumulator
+sum([H|T], Acc) -> sum(T, H + Acc).   % Tail call
+```
+- The accumulator (`Acc`) carries the running result.
+- No work is left after the recursive call.
 
 
 
