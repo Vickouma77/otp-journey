@@ -2,28 +2,42 @@
 
 -export([start/0, ping/2, pong/0]).
 
-ping(0, Pong_PID) ->
-  Pong_PID ! finished,
+-spec start() -> pid().
+-spec ping(non_neg_integer(), pid()) -> ok.
+-spec pong() -> ok.
+
+ping(0, PongPid) when is_pid(PongPid) ->
+  PongPid ! finished,
   io:format("ping finished ~n", []);
 
-ping(N, Pong_PID) ->
-  Pong_PID ! {ping, self()},
+ping(N, PongPid) when is_integer(N), N > 0, is_pid(PongPid) ->
+  PongPid ! {ping, self()},
   receive
     pong ->
       io:format("ping received pong~n", [])
+  after 2000 ->
+      io:format("ping timed out waiting for pong~n", []),
+      ok
   end,
-  ping(N - 1, Pong_PID).
+  ping(N - 1, PongPid);
+
+ping(_, _) ->
+  erlang:error(badarg).
 
 pong() ->
   receive
     finished ->
-      io:format("pong finished~n", []);
-    {ping, Pong_PID} ->
+      io:format("pong finished~n", []),
+      ok;
+    {ping, PingPid} when is_pid(PingPid) ->
       io:format("pong received ping~n", []),
-      Pong_PID ! pong,
+      PingPid ! pong,
       pong()
+  after 5000 ->
+      io:format("pong timed out waiting for ping~n", []),
+      ok
   end.
 
 start() ->
-  Pong_PID = spawn(message, pong, []),
-  spawn(message, ping, [3, Pong_PID]).
+  PongPid = spawn(message, pong, []),
+  spawn(message, ping, [3, PongPid]).
