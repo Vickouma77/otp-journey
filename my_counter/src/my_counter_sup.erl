@@ -4,11 +4,9 @@
 %%%-------------------------------------------------------------------
 
 -module(my_counter_sup).
-
 -behaviour(supervisor).
 
 -export([start_link/0]).
-
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
