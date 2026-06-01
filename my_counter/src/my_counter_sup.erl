@@ -21,14 +21,14 @@ init([]) ->
         period => 10
     },
 
-    ChildSpecs = #{
+    ChildSpecs = [#{
         id => my_counter_server,
         start => {my_counter_server, start_link, []},
         restart => permanent,
         shutdown => 5000,
         type => worker,
         modules => [my_counter_server]
-    },
+    }],
     
     {ok, {SupFlags, ChildSpecs}}.
 

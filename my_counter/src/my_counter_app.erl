@@ -4,7 +4,6 @@
 %%%-------------------------------------------------------------------
 
 -module(my_counter_app).
-
 -behaviour(application).
 
 -export([start/2, stop/1]).
