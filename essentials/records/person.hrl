@@ -1,0 +1,1 @@
+-record(person, {name, age=0, email, active=true}).
