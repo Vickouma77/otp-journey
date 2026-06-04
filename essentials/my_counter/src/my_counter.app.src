@@ -1,14 +1,14 @@
 {application, my_counter, [
     {description, "An OTP application"},
     {vsn, "0.1.0"},
-    {registered, []},
+    {registered, [my_counter_server, my_counter_sup]},
     {mod, {my_counter_app, []}},
     {applications, [
         kernel,
         stdlib
     ]},
     {env, []},
-    {modules, []},
+    {modules, [my_counter_app, my_counter_server, my_counter_sup]},
     {licenses, ["Apache-2.0"]},
     {links, []}
  ]}.
