@@ -12,4 +12,4 @@ count_vowels([_ | T], Acc) ->
     count_vowels(T, Acc).
 
 start() ->
-    io:fmt("Vowels in Erlang is great ~p~n", [count_vowels("Erlang is great")]).
+    io:format("Vowels in Erlang is great: ~p~n", [count_vowels("Erlang is great")]).
